@@ -1,0 +1,29 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:${VERSION}
+    container_name: vaultwarden
+    restart: unless-stopped
+    volumes:
+      - ${PATH1}:/data
+    environment:
+      - ADMIN_TOKEN=${ADMINTOKEN}
+      - SIGNUPS_ALLOWED=false
+      - DOMAIN=https://${DOMAIN}
+      - SMTP_HOST=${SMTPHOST}
+      - SMTP_FROM=${SMTPFROM}
+      - SMTP_PORT=${SMTPPORT}
+      - SMTP_SECURITY=${SMTPSECURITY}
+      - SMTP_USERNAME=${SMTPUSERNAME}
+      - SMTP_PASSWORD=${SMTPPASSWORD}
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.vaultwarden.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.vaultwarden.entrypoints=websecure
+      - traefik.http.routers.vaultwarden.middlewares=crowdsec@docker
+      - traefik.http.routers.vaultwarden.tls.certresolver=myresolver
+      - traefik.http.services.vaultwarden.loadbalancer.server.port=80
+networks:
+  proxy-network:
+    external: true

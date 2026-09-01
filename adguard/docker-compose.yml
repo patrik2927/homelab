@@ -1,0 +1,33 @@
+services:
+  adguardhome:
+    image: adguard/adguardhome:${VERSION}
+    container_name: adguardhome
+    restart: unless-stopped
+    volumes:
+      - ${WORKPATH}:/opt/adguardhome/work
+      - ${CONFPATH}:/opt/adguardhome/conf
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+    networks:
+      proxy-network: null
+      macvlan-network:
+        ipv4_address: ${IP}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy-network
+      - traefik.http.routers.adguard.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.adguard.entrypoints=websecure
+      - traefik.http.routers.adguard.tls.certresolver=myresolver
+      - traefik.http.services.adguard.loadbalancer.server.port=80
+networks:
+  macvlan-network:
+    driver: macvlan
+    driver_opts:
+      parent: ${INTERFACE}
+    ipam:
+      config:
+        - subnet: ${SUBNET}
+          gateway: ${GATEWAY}
+  proxy-network:
+    external: true

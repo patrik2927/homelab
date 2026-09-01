@@ -1,0 +1,26 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:${VERSION}
+    container_name: jellyfin
+    restart: unless-stopped
+    volumes:
+      - ${CONFIGPATH}:/config
+      - ${CACHEPATH}:/cache
+      - ${DATAPATH}:/data:ro
+    environment:
+      - JELLYFIN_PublishedServerUrl=https://${DOMAIN}
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyfin.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.jellyfin.entrypoints=websecure
+      - traefik.http.routers.jellyfin.middlewares=crowdsec@docker
+      - traefik.http.routers.jellyfin.tls.certresolver=myresolver
+      - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+networks:
+  proxy-network:
+    external: true
+    # Optional - may be necessary for docker healthcheck to pass if running in host network mode
+    #    extra_hosts:
+    #      - 'host.docker.internal:host-gateway'

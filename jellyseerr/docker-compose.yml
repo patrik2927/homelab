@@ -1,0 +1,22 @@
+services:
+  jellyseerr:
+    image: ghcr.io/seerr-team/seerr:${VERSION}
+    container_name: jellyseerr
+    user: root
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Budapest
+    volumes:
+      - ${PATH1}:/app/config
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyseerr.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.jellyseerr.entrypoints=websecure
+      - traefik.http.routers.jellyseerr.middlewares=crowdsec@docker
+      - traefik.http.routers.jellyseerr.tls.certresolver=myresolver
+      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
+networks:
+  proxy-network:
+    external: true

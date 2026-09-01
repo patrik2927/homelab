@@ -1,0 +1,27 @@
+services:
+  duplicati:
+    image: lscr.io/linuxserver/duplicati:${VERSION}
+    container_name: duplicati
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Budapest
+      - SETTINGS_ENCRYPTION_KEY=${KEY}
+      - CLI_ARGS=--webservice-password=${JELSZO} --webservice-allowed-hostnames=*
+    volumes:
+      - ${CONFIGPATH}:/config
+      - ${BACKUPPATH}:/source:ro
+    restart: unless-stopped
+    ports:
+      - 8200:8200
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.duplicati.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.duplicati.entrypoints=websecure
+      - traefik.http.routers.duplicati.tls.certresolver=myresolver
+      - traefik.http.services.duplicati.loadbalancer.server.port=8200
+networks:
+  proxy-network:
+    external: true

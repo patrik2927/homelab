@@ -1,0 +1,59 @@
+services:
+  traefik:
+    image: traefik:${VERSION}
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      # Connect to the 'traefik_proxy' overlay network for inter-container communication across nodes
+      - proxy-network
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CF_DNS_API_TOKEN=${APITOKEN}
+    volumes:
+      - ${PATH1}:/var/run/docker.sock:ro
+      - ${LETSENCRYPTPATH}:/letsencrypt
+      - ${LOGSPATH}:/var/log/traefik
+    command:
+      # EntryPoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+      - --certificatesresolvers.myresolver.acme.dnschallenge=true
+      - --certificatesresolvers.myresolver.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.myresolver.acme.email=${ACMEEMAIL}
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+      # Providers 
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=proxy-network
+      # API & Dashboard 
+      - --api.dashboard=true
+      - --api.insecure=false
+      # Observability 
+      - --log.level=INFO
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
+      - --entrypoints.websecure.forwardedHeaders.trustedIPs=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,104.24.0.0/14,172.64.0.0/13,131.0.72.0/22
+      - --metrics.prometheus=true
+    # Traefik Dynamic configuration via Docker labels
+    labels:
+      # Enable self‑routing
+      - traefik.enable=true
+      # Dashboard router
+      - traefik.http.routers.dashboard.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.tls.certresolver=myresolver
+      # Basic‑auth middleware
+      - traefik.http.middlewares.dashboard-auth.basicauth.users=${DASHBOARDAUTH}
+      - traefik.http.routers.dashboard.middlewares=dashboard-auth
+networks:
+  proxy-network:
+    external: true

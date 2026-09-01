@@ -1,0 +1,70 @@
+services:
+  synapse:
+    image: matrixdotorg/synapse:${VERSION1}
+    container_name: matrix-synapse
+    restart: unless-stopped
+    volumes:
+      - ${PATH1}:/data
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.matrix.rule=Host(`${DOMAIN1}`)
+      - traefik.http.routers.matrix.entrypoints=websecure
+      - traefik.http.routers.matrix.middlewares=crowdsec@docker
+      - traefik.http.routers.matrix.tls.certresolver=myresolver
+      - traefik.http.services.matrix.loadbalancer.server.port=8008
+  element:
+    image: vectorim/element-web:${VERSION2}
+    container_name: element-chat
+    restart: unless-stopped
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.element.rule=Host(`${DOMAIN2}`)
+      - traefik.http.routers.element.entrypoints=websecure
+      - traefik.http.routers.element.middlewares=crowdsec@docker
+      - traefik.http.routers.element.tls.certresolver=myresolver
+      - traefik.http.services.element.loadbalancer.server.port=80
+  coturn:
+    image: coturn/coturn:${VERSION3}
+    container_name: coturn
+    restart: unless-stopped
+    ports:
+      - ${COTURNPORT1}
+      - ${COTURNPORT2}
+      - ${COTURNPORT3}
+      - ${COTURNPORT4}
+      - ${COTURNPORT5}
+    volumes:
+      - ${COTURNPATH}:/etc/coturn/turnserver.conf
+  synapse-admin:
+    image: awesometechnologies/synapse-admin:${VERSION4}
+    container_name: synapse-admin
+    restart: unless-stopped
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.synapse-admin.rule=Host(`${DOMAIN3}`)
+      - traefik.http.routers.synapse-admin.entrypoints=websecure
+      - traefik.http.routers.synapse-admin.tls.certresolver=myresolver
+      - traefik.http.services.synapse-admin.loadbalancer.server.port=80
+  matrix-wellknown:
+    image: nginx:alpine
+    container_name: matrix-wellknown
+    restart: unless-stopped
+    volumes:
+      - ${PATH2}:/usr/share/nginx/html/.well-known
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.matrix-wellknown.rule=Host(`${DOMAIN1}`) &&
+        PathPrefix(`/.well-known/matrix`)
+      - traefik.http.routers.matrix-wellknown.entrypoints=websecure
+      - traefik.http.routers.matrix-wellknown.tls.certresolver=myresolver
+networks:
+  proxy-network:
+    external: true

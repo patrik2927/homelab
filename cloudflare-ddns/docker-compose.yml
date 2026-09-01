@@ -1,0 +1,9 @@
+services:
+  cloudflare-ddns:
+    image: favonia/cloudflare-ddns:${VERSION}
+    container_name: cloudflare-ddns
+    restart: unless-stopped
+    environment:
+      - CF_API_TOKEN=${APITOKEN}
+      - DOMAINS=${DOMAINS}
+networks: {}

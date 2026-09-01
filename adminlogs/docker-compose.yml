@@ -1,0 +1,36 @@
+services:
+  dockge:
+    image: louislam/dockge:${VERSION1}
+    container_name: dockge
+    restart: unless-stopped
+    environment:
+      - DOCKGE_STACKS_DIR=/opt/stacks
+    volumes:
+      - ${PATH1}:/var/run/docker.sock
+      - ${PATH2}:/app/data
+      - ${PATH3}:/opt/stacks
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dockge.rule=Host(`${DOMAIN1}`)
+      - traefik.http.routers.dockge.entrypoints=websecure
+      - traefik.http.routers.dockge.tls.certresolver=myresolver
+      - traefik.http.services.dockge.loadbalancer.server.port=5001
+  dozzle:
+    image: amir20/dozzle:${VERSION2}
+    container_name: dozzle
+    restart: unless-stopped
+    volumes:
+      - ${PATH4}:/var/run/docker.sock
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dozzle.rule=Host(`${DOMAIN2}`)
+      - traefik.http.routers.dozzle.entrypoints=websecure
+      - traefik.http.routers.dozzle.tls.certresolver=myresolver
+      - traefik.http.services.dozzle.loadbalancer.server.port=8080
+networks:
+  proxy-network:
+    external: true

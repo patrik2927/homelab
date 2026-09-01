@@ -1,0 +1,22 @@
+services:
+  stirling-pdf:
+    image: frooodle/s-pdf:${VERSION}
+    container_name: stirling-pdf
+    environment:
+      - DOCKER_ENABLE_SECURITY=false
+    volumes:
+      - ${TESTDATAPATH}:/usr/share/tesseract-ocr/4.00/tessdata
+      - ${CONFIGPATH}:/configs
+      - ${CUSTOMFILESPATH}:/customFiles
+    restart: unless-stopped
+    networks:
+      - proxy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.stirling.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.stirling.entrypoints=websecure
+      - traefik.http.routers.stirling.middlewares=crowdsec@docker
+      - traefik.http.services.stirling.loadbalancer.server.port=8080
+networks:
+  proxy-network:
+    external: true

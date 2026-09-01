@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mariadb:${VERSION1}
+    container_name: nextcloud-db
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    volumes:
+      - ${PATH1}:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${ROOTPASSWORD}
+      - MYSQL_PASSWORD=${DBPASSWORD}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+  app:
+    image: nextcloud:${VERSION2}
+    container_name: nextcloud-app
+    restart: unless-stopped
+    depends_on:
+      - db
+    volumes:
+      - ${PATH2}:/var/www/html
+      - ${PATH3}:/var/www/html/data
+    environment:
+      - MYSQL_PASSWORD=${DBPASSWORD}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=db
+      - OVERWRITECLIURL=https://${DOMAIN}
+      - OVERWRITEHOST=${DOMAIN}
+    networks:
+      - proxy-network
+      - default
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.nextcloud.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.nextcloud.entrypoints=websecure
+      - traefik.http.routers.nextcloud.middlewares=crowdsec@docker
+      - traefik.http.routers.nextcloud.tls.certresolver=myresolver
+      - traefik.http.services.nextcloud.loadbalancer.server.port=80
+networks:
+  proxy-network:
+    external: true
