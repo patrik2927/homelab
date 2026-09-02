@@ -33,4 +33,4 @@ Jelenleg több mint 20 szolgáltatás fut különálló docker container környe
 * Vaultwarden: Saját jelszókezelő 
 * Nextcloud: Privát felhőtárhely
 * Matrix / Element: Titkosított chat platform
-* Média és automatizálás: Jellyfin, Audiobookshelf, illetve a letöltés/menedzsment (Stirling, Homarr, Radarr, Sonarr, Prowlarr, qBittorrent, Jellyseerr)
+* Média és automatizálás: Jellyfin, Audiobookshelf.
